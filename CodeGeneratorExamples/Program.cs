@@ -1,15 +1,22 @@
 ﻿using System;
+using System.Threading.Tasks;
+using CodeGeneratorExamplesGenerated;
 
 namespace CodeGeneratorExamples
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             bool toggleState = MyStaticClass.ToggleState();
             Console.WriteLine(toggleState);
+            
             var myController = new MyController();
-            myController.TryRunStuff();
+            myController.RunStuff();
+
+            var myHeavyClass = new MyHeavyClass();
+            await myHeavyClass.DoHeavyStuff();
+
         }
     }
 }

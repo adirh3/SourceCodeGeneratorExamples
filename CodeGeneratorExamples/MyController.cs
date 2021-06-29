@@ -8,10 +8,9 @@ namespace CodeGeneratorExamples
         public int RunStuff()
         {
             if (DateTime.Now.Minute == 6)
-                throw new InvalidOperationException("Try to be considerate about time!");
+                throw new InvalidOperationException("Try to be more considerate about time!");
 
             return 5;
         }
-        
     }
 }

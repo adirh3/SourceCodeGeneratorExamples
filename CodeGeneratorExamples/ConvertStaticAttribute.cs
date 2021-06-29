@@ -11,4 +11,9 @@ namespace CodeGeneratorExamples
     {
         
     }
+    
+    public class BenchmarkAttribute : Attribute
+    {
+        
+    }
 }

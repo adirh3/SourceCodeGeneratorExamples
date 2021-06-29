@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CodeGeneratorExamples
+﻿namespace CodeGeneratorExamples
 {
     [ConvertStatic]
     public static class MyStaticClass

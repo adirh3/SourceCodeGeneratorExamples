@@ -5,10 +5,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
+
 namespace CodeGenerator
 {
     [Generator]
-    public class TryCatchCodeGenerator : ISourceGenerator
+    public class BenchmarksCodeGenerator : ISourceGenerator
     {
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -20,7 +21,7 @@ namespace CodeGenerator
             {
                 IEnumerable<TypeDeclarationSyntax> convertStaticClasses = syntaxTree.GetRoot().DescendantNodes()
                     .OfType<TypeDeclarationSyntax>().Where(tds =>
-                        tds.AttributeLists.Any(at => at.ToString().StartsWith("[TryCatch")));
+                        tds.AttributeLists.Any(at => at.ToString().StartsWith("[BenchmarkAttribute")));
 
                 foreach (TypeDeclarationSyntax typeDeclarationSyntax in convertStaticClasses)
                 {
@@ -29,27 +30,45 @@ namespace CodeGenerator
                     if (parentNode is not NamespaceDeclarationSyntax namespaceDeclarationSyntax)
                         continue;
 
-                    IEnumerable<MethodDeclarationSyntax> methods =
-                        typeDeclarationSyntax.ChildNodes().OfType<MethodDeclarationSyntax>();
-
                     // Get the namespace's parent which is the using
                     string classCode = namespaceDeclarationSyntax.Parent?.ToString()
-                        .Replace("[TryCatch]", string.Empty);
+                        .Replace("[BenchmarkAttribute]", string.Empty)
+                        .Replace("namespace " + namespaceDeclarationSyntax.Name,
+                            "namespace " + namespaceDeclarationSyntax.Name + "Generated")
+                        .Replace(className, className + "Benchmarks");;
 
-                    foreach (MethodDeclarationSyntax methodDeclarationSyntax in methods)
+
+                    int i = 0;
+                    while (TryReplaceFirst(ref classCode, "// Start benchmark",
+                        $"var stopWatch{i} = System.Diagnostics.Stopwatch.StartNew();"))
                     {
-                        string methodName = methodDeclarationSyntax.Identifier.ToString();
-                        string methodDeclaration = methodDeclarationSyntax.ToString();
-                        string methodBody = methodDeclarationSyntax.Body!.ToString();
-                        string tryCatchMethod = methodDeclaration.Replace(methodName, "Try" + methodName)
-                            .Replace(methodBody, $@"{{try {methodBody} catch(Exception){{ return default; }}}}");
-                        classCode = classCode!.Replace(methodDeclaration, tryCatchMethod);
+                        i++;
                     }
+                    
+                    i = 0;
+                    while (TryReplaceFirst(ref classCode, "// End benchmark",
+                        $"stopWatch{i}.Stop(); \n System.Console.WriteLine(stopWatch{i}.ElapsedMilliseconds);"))
+                    {
+                        i++;
+                    }
+
 
                     context.AddSource("StaticGenerator" + className,
                         SourceText.From(classCode!, Encoding.UTF8));
                 }
             }
+        }
+
+        public bool TryReplaceFirst(ref string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search);
+            if (pos < 0)
+            {
+                return false;
+            }
+
+            text = text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+            return true;
         }
     }
 }
